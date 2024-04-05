@@ -22,7 +22,7 @@ B = 0.16*H_ref
 L = 0.16*W_ref
 R = 0.08*W_ref
 
-xbins = 20
+xbins = 40
 xlow = 0
 xhigh = 40
 
@@ -64,11 +64,11 @@ p_3 = 7.102
 
 #Parameter Test
 #'''
-v_0 = 4.470
-v_1 = 0.39
-v_2 = 2.05
-v_3 = 39.99
-f1 = ROOT.TF1("f1", "[0] + [1]*(x**2)*exp(-(((x-[2])/[3])**2))", 0, 40)
+v_0 = 19.99
+v_1 = 19.99
+v_2 = 4.94
+v_3 = 19.99
+f1 = ROOT.TF1("f1", "[0] + [1]*(x)*exp(-(((x-[2])/[3])**2))", 0, 40)
 f1.FixParameter(0, p_0)
 f1.FixParameter(1, p_1)
 f1.FixParameter(2, p_2)
@@ -79,9 +79,9 @@ f1.SetMarkerSize(0)
 h.Fit("f1")
 f1.Draw("same")
 
-print("what", np.exp(-(((20-p_2)/p_3)**2)))
+#print("what", np.exp(-(((20-p_2)/p_3)**2)))
 
-f2 = ROOT.TF1("f2", "[0] + [1]*(x**2)*exp(-(((x-[2])/[3])**2))", 0, 40)
+f2 = ROOT.TF1("f2", "[0] + [1]*(x)*exp(-(((x-[2])/[3])**2))", 0, 40)
 f2.FixParameter(0, v_0)
 f2.FixParameter(1, v_1)
 f2.FixParameter(2, v_2)
@@ -109,7 +109,7 @@ def fit_func(x, d, p, par):
 	if par == "p3":
 		#print(p_0, p_1, p_2)
 		argument = -pow( ( (x-p_2) / p), 2)
-		f = pow(p_0,1) + p_1 * (pow(x,2)) * np.exp(argument)
+		f = pow(p_0,1) + p_1 * (pow(x,1)) * np.exp(argument)
 		chi2 = pow((f-d), 2) / (2*f)
 		#print("f: ", argument, f, chi2)
 		#return chi2
@@ -117,21 +117,21 @@ def fit_func(x, d, p, par):
 	elif par == "p2":
 		#print(p_0, p_1, p_3)
 		argument = -pow( ( (x-p) / p_3), 2)
-		f = pow(p_0,1) + p_1 * (pow(x,2)) * np.exp(argument)
+		f = pow(p_0,1) + p_1 * (pow(x,1)) * np.exp(argument)
 		chi2 = pow((f-d), 2) / (2*f)
 		#return chi2
 
 	elif par == "p1":
 		#print(p_0, p_2, p_3)
 		argument = -pow( ( (x-p_2) / p_3), 2)
-		f = pow(p_0,1) + p * (pow(x,2)) * np.exp(argument)
+		f = pow(p_0,1) + p * (pow(x,1)) * np.exp(argument)
 		chi2 = pow((f-d), 2) / (2*f)
 		#return chi2
 
 	elif par == "p0":
 		#print(p_1, p_2, p_3)
 		argument = -pow( ( (x-p_2) / p_3), 2)
-		f = pow(p,1) + p_1 * (pow(x,2)) * np.exp(argument)
+		f = pow(p,1) + p_1 * (pow(x,1)) * np.exp(argument)
 		chi2 = pow((f-d), 2) / (2*f)
 
 	return chi2
@@ -171,17 +171,14 @@ chi2_yAxis.SetTitle("#chi^{2}_{i}")
 
 i_list = []
 chi2_list = []
-n = 0
-for i in np.arange(0.01, 10, 0.01):
-	n+=1
+
+for i in np.arange(0.01, 20, 0.01):
+
 	chi2_sum = 0
 	for j in range(xbins):
 
-		#print("I'm a big fat dummy, chi2 = ", chi2_sum)
-		#print(j, h.GetBinContent(j))
 		if h.GetBinContent(j) != 0:
 			chi2_sum += fit_func(j, h.GetBinContent(j), i, parameter)
-		#print("I'm not a smartass, chi2 = ", chi2_sum)
 
 	chi2_hist.AddPoint(i, chi2_sum)
 	i_list.append(i)
@@ -239,8 +236,8 @@ latex.SetTextFont(42)
 latex.SetTextSize(0.3*canvas.GetTopMargin())
 latex.SetTextAlign(32)
 latex.DrawLatex(0+4.0*canvas.GetLeftMargin(), 1-canvas.GetTopMargin()+0.5*canvas.GetTopMargin(), 
-	"f_{i} = p_{0}^{2} + p_{1} x_{i}^{2} exp(#frac{-(x_{i}-p_{2})^{2}}{p_{3}^{2}})")
+	"f_{i} = p_{0}^{2} + p_{1} x_{i} exp(#frac{-(x_{i}-p_{2})^{2}}{p_{3}^{2}})")
 
 
-canvas.SaveAs("plots/test_binsize_20/part1_1D_testingCalculatedFits.png")
-canvas2.SaveAs("plots/test_binsize_20/part1_1D_chi2_{p}.png".format(p=parameter))
+canvas.SaveAs("plots/part1/part1_1D_testingCalculatedFits.png")
+canvas2.SaveAs("plots/part1/part1_1D_chi2_{p}.png".format(p=parameter))
