@@ -277,7 +277,7 @@ latex.SetTextFont(42)
 latex.SetTextSize(0.3*canvas.GetTopMargin())
 latex.SetTextAlign(32)
 latex.DrawLatex(0+4.0*canvas.GetLeftMargin(), 1-canvas.GetTopMargin()+0.5*canvas.GetTopMargin(), 
-	"f_{i} = p_{0}^{2} + p_{1} x_{i}^{2} exp(#frac{-(x_{i}-p_{2})^{2}}{p_{3}^{2}})")
+	"f_{i} = p_{0}^{2} + p_{1} x_{i} exp(#frac{-(x_{i}-p_{2})^{2}}{p_{3}^{2}})")
 
 
 canvas.SaveAs("plots/part1/part1_2D_chi2_testingCalculatedFits.png")
