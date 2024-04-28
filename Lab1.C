@@ -1,4 +1,4 @@
-//Lab 1-- Towsifa Akhter
+//Lab 1-- Towsifa Akhter ```root -l methodsComparison.C```
 
 #include <iostream>
 #include <string>
@@ -15,22 +15,22 @@
 using namespace std;
 
 //Define functions, parameters, and number of iterations below
-#define function(x) 1
+//#define function(x) 1
 //#define function(x) x
 //#define function(x) pow(x, 3)
 //#define function(x) pow(sin(x), 4)
-//#define function(x) 200*exp(-pow((x-3),2)/0.00002) + 2*exp(x-3)
+#define function(x) (200*exp(-pow((x-3),2)/0.00002) + 2*exp(x-3))
 
 
 double function_integral_root(double* variable, double* parameter){
 	return function(variable[0]);
 }
 
-double midPoint_integration(float x, float del_x){
+float midPoint_integration(float x, float del_x){
 	return function(x)*del_x;
 }
 
-double trapezoidal_integration(float x, float del_x){
+float trapezoidal_integration(float x, float del_x){
 	float low_x = x-del_x/2; float high_x = x+del_x/2;
 	return (function(low_x)+function(high_x))*del_x/2;
 }
@@ -52,11 +52,16 @@ tuple<float, float, float> monteCarlo_integration(int n, float lower_limit, floa
 		sum += function(uniform_dist);
 		sum_square += pow(sum, 2);
 	}
-
+	cout << "sum: " << sum << endl;
 	float F_bar_square = pow(sum/n, 2);
-	float F_square_bar = sum_square/n;
+	cout << "F_bar_square: " << F_bar_square << endl;
+	float F_square_bar = sum_square/pow(n,2);
+	cout << "F_square_bar: " << F_square_bar << endl;
 	float del_F_square = F_square_bar - F_bar_square;
+	cout << "del_F_square: " << del_F_square << endl;
 	float uncertainty = sqrt(del_F_square)/sum;
+	cout << "uncertainty: " << uncertainty << endl;
+	cout << "RMS value: " << hist->GetRMS() << endl;
 
 	//return (upper_limit-lower_limit)*sum/n;
 	return {(upper_limit-lower_limit)*sum/n, hist->GetRMS(), uncertainty};
@@ -64,18 +69,18 @@ tuple<float, float, float> monteCarlo_integration(int n, float lower_limit, floa
 
 void methodsComparison()
 {
-	float lower_limit=0.0; float upper_limit=1; //1 or 4 or M_PI/2
+	float lower_limit=0; float upper_limit=4; //1 or 4 or M_PI/2
 	int arr_iteration[] = {5, 10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000};
-	int bin_size = 10;
-
+	//int arr_iteration[] = {5, 10, 50, 100, 200, 300, 400, 500, 1000, 2000};
 
 	//calculating the analytical integral first using root's integral function TF1::Integral() and corresponding error from TF1::IntegralError
 	TF1 analytical_function("function_integral_root", function_integral_root);
 	auto integral_analytical_value = analytical_function.Integral(lower_limit, upper_limit); //integrating the function between x=0 and x=1 or M_PI/2 or 4
 	std::cout << "integral: " << integral_analytical_value << std::endl;
 
-	FILE *t = fopen("eq0.csv", "w");
-	fprintf(t, "iteration, analytical, midpoint, trapezoidal, MC\n");
+	FILE *t = fopen("eq4.csv", "w");
+	fprintf(t, "analytical integral value: %f\n", integral_analytical_value);
+	fprintf(t, "iteration, midpoint, trapezoidal, MC\n");
 
 	//Create a canvas to draw the histogram
     TCanvas *c1 = new TCanvas("c1", "Comparison of Methods", 1200, 800);
@@ -98,21 +103,21 @@ void methodsComparison()
 
 
 		float delta_xi = (upper_limit - lower_limit)/arr_iteration[iter];
-		//cout << "delta_xi: " << delta_xi << endl;
+		cout << "delta_xi: " << delta_xi << endl;
 
-		for (int i=1; i <=arr_iteration[iter]; i++){
+		for (int i=1; i <=arr_iteration[iter]; ++i){
 			xi = i*delta_xi;
 			//cout << "xi: " << xi << endl;
 
 			integration_mid +=midPoint_integration(xi, delta_xi);
 			integration_trap += trapezoidal_integration(xi, delta_xi);
-			//integration_mc = monteCarlo_integration(arr_iteration[iter], lower_limit, upper_limit); 
 		}
 
 		auto [mc_integral, rms, uncertainty] = monteCarlo_integration(arr_iteration[iter], lower_limit, upper_limit);
-
+		integration_mid = round(integration_mid*100.0)/100.0;
+		integration_trap = round(integration_trap*100.0)/100.0;
 		cout << "integration (mid, trap, mc): " << integration_mid << ", " << integration_trap << ", " << mc_integral << endl;
-		fprintf(t, "%i, %f, %f, %f, %f\n", arr_iteration[iter], integral_analytical_value, integration_mid, integration_trap, mc_integral);
+		fprintf(t, "%i & %f & %f & %f\n", arr_iteration[iter], integration_mid, integration_trap, mc_integral);
 
 		g0->SetPoint(iter, arr_iteration[iter], integral_analytical_value);
 		g1->SetPoint(iter, arr_iteration[iter], integration_mid);
@@ -132,21 +137,21 @@ void methodsComparison()
 	mg->Add(g2);
 	mg->Add(g3);
 
-	mg->SetTitle("Comparing Different Integration Methods for f(x)=1; Number of Iteration, N; Current Value of the Integral, I(N)");
+	//mg->SetTitle("Comparing Different Integration Methods for f(x)=1; Number of Iteration, N; Current Value of the Integral, I(N)");
 	//mg->SetTitle("Comparing Different Integration Methods for f(x)=x; Number of Iteration, N; Current Value of the Integral, I(N)");
 	//mg->SetTitle("Comparing Different Integration Methods for f(x)=x^{3}; Number of Iteration, N; Current Value of the Integral, I(N)");
 	//mg->SetTitle("Comparing Different Integration Methods for f(x)=#frac{x^{4}}{(1+x^{2})^{3}}; Number of Iteration, N; Current Value of the Integral, I(N)");
-	//mg->SetTitle("Comparing Different Integration Methods for f(x)=200 e^{(- #frac{(x-3)^{2}}{0.00002})} + 2 e^{(x-3)}; Number of Iteration, N; Current Value of the Integral, I(N)");
+	mg->SetTitle("Comparing Different Integration Methods for f(x)=200 e^{(- #frac{(x-3)^{2}}{0.00002})} + 2 e^{(x-3)}; Number of Iteration, N; Current Value of the Integral, I(N)");
 	mg->GetYaxis()->SetTitleOffset(1.2); //mg->GetYaxis()->SetTitleSize(0.04);
 	mg->GetXaxis()->SetTitleOffset(1);
 	mg->GetXaxis()->SetNoExponent();
 	mg->GetXaxis()->SetLimits(5, 100000);
-	c1->SetLogx();
+	//c1->SetLogx();
 	mg->Draw("ALP");
 
-	c1->BuildLegend(0.2, 0.7, 0.7, 0.9, "I=<f(x)>_{(0:1)}", "");
+	c1->BuildLegend(0.2, 0.7, 0.7, 0.9, "I=<f(x)>_{(0:4)}", "");
 
-	c1->SaveAs("plots/eq0.pdf");
+	c1->SaveAs("plots/eq4.pdf");
 
 	//RMS plot
 	TCanvas *c2 = new TCanvas("c2", "RMS of Monte Carlo Integration", 1200, 800);
@@ -156,11 +161,11 @@ void methodsComparison()
     g4->GetXaxis()->SetTitleOffset(1);
     g4->GetXaxis()->SetNoExponent();
     g4->GetXaxis()->SetLimits(5, 100000);
-    c2->SetLogx();
+    //c2->SetLogx();
     g4->Draw("AL");
 
-    c2->BuildLegend(0.2, 0.7, 0.7, 0.9, "I_{RMS}=<f(x)>_{(0:1)}", "");
-    c2->SaveAs("plots/eq0_RMS.pdf");
+    c2->BuildLegend(0.2, 0.7, 0.7, 0.9, "I_{RMS}=<f(x)>_{(0:4)}", "");
+    c2->SaveAs("plots/eq4_RMS.pdf");
 
 	//uncertainty plot
     TCanvas *c3 = new TCanvas("c3", "Uncertainty of Monte Carlo Integration", 1200, 800);
@@ -170,13 +175,13 @@ void methodsComparison()
     g5->GetXaxis()->SetTitleOffset(1);
     g5->GetXaxis()->SetNoExponent();
     g5->GetXaxis()->SetLimits(5, 100000);
-    c3->SetLogx();
+    //c3->SetLogx();
     g5->Draw("AL");
 
-    c3->BuildLegend(0.2, 0.7, 0.7, 0.9, "I_{uncertainty}=<f(x)>_{(0:1)}", "");
-    c3->SaveAs("plots/eq0_uncertainty.pdf");
+    c3->BuildLegend(0.2, 0.7, 0.7, 0.9, "I_{uncertainty}=<f(x)>_{(0:4)}", "");
+    c3->SaveAs("plots/eq4_uncertainty.pdf");
 
-  fclose(t);
+	fclose(t);
 }
 
 
