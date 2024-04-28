@@ -17,40 +17,14 @@ using namespace std;
 
 //Define functions, parameters, and number of iterations below
 
-#define function(x) 200*exp(-pow((x-3),2)/0.00002) + 2*exp(x-3)
+#define function(x) (200*exp(-pow((x-3),2)/0.00002) + 2*exp(x-3))
 
 
 double function_integral_root(double* variable, double* parameter){
 	return function(variable[0]);
 }
 
-double midPoint_integration(float x, float del_x){
-	return function(x)*del_x;
-}
-
-double trapezoidal_integration(float x, float del_x){
-	float low_x = x-del_x/2; float high_x = x+del_x/2;
-	return (function(low_x)+function(high_x))*del_x/2;
-}
-
-double monteCarlo_integration(int n, float lower_limit, float upper_limit){
-	TRandom random;
-	//Initial seed is NOT RANDOM, so results will be the same
-	//Setting seed to 0 will give us a new random seed
-	random.SetSeed(0);
-	double sum = 0.0;
-
-	for (int i=0; i<n; i++){
-		double uniform_dist = random.Uniform(lower_limit, upper_limit);
-		//cout << "uniform dist " << uniform_dist << endl;
-		sum += function(uniform_dist);
-	}
-	return (upper_limit-lower_limit)*sum/n;
-
-}
-
-//double weighted_monteCarlo_integration(int n, float lower_limit, float upper_limit, float mean_g, float sigma_g){
-tuple<float, float, float> weighted_monteCarlo_integration(int n, float lower_limit, float upper_limit, float mean_g, float sigma_g){
+tuple<float, float, float> monteCarlo_integration(int n, float lower_limit, float upper_limit){
 	TRandom random;
 	//Initial seed is NOT RANDOM, so results will be the same
 	//Setting seed to 0 will give us a new random seed
@@ -60,6 +34,75 @@ tuple<float, float, float> weighted_monteCarlo_integration(int n, float lower_li
 	TH1F *hist = new TH1F("hist", "hist", n, 0, n);
 
 	for (int i=0; i<n; i++){
+		double uniform_dist = random.Uniform(lower_limit, upper_limit);
+		//cout << "uniform dist " << uniform_dist << endl;
+		hist->Fill(uniform_dist);
+		sum += function(uniform_dist);
+		sum_square += pow(sum, 2);
+	}
+	cout << "sum: " << sum << endl;
+	float F_bar_square = pow(sum/n, 2);
+	cout << "F_bar_square: " << F_bar_square << endl;
+	float F_square_bar = sum_square/pow(n,2);
+	cout << "F_square_bar: " << F_square_bar << endl;
+	float del_F_square = F_square_bar - F_bar_square;
+	cout << "del_F_square: " << del_F_square << endl;
+	float uncertainty = sqrt(del_F_square)/sum;
+	cout << "uncertainty: " << uncertainty << endl;
+	cout << "RMS value: " << hist->GetRMS() << endl;
+
+	//return {(upper_limit-lower_limit)*sum/n, hist->GetRMS(), uncertainty};
+    return {(upper_limit-lower_limit)*sum/n, hist->GetStdDev(), uncertainty};
+}
+
+tuple<float, float, float> monteCarlo_integration_leftright(int n, float lower_limit, float upper_limit){
+	TRandom random;
+	//Initial seed is NOT RANDOM, so results will be the same
+	//Setting seed to 0 will give us a new random seed
+	random.SetSeed(0);
+	double sum = 0.0; double sum1 = 0.0;
+	double sum_square = 0.0; double sum_square1 = 0.0;
+	TH1F *hist = new TH1F("hist", "hist", n, 0, n);
+	TH1F *hist1 = new TH1F("hist1", "hist1", n, 0, n);
+
+	for (int i=0; i<n; i++){
+		double uniform_dist = random.Uniform(lower_limit, 2.99);
+		double uniform_dist1 = random.Uniform(3.01, upper_limit);
+		//cout << "uniform dist " << uniform_dist << endl;
+		hist->Fill(uniform_dist);
+		sum += function(uniform_dist);
+		sum_square += pow(sum, 2);
+		hist1->Fill(uniform_dist1);
+		sum1 += function(uniform_dist1);
+		sum_square1 += pow(sum1, 2);
+	}
+	cout << "sum: " << sum << endl;
+	float F_bar_square = pow(sum/n, 2);
+	cout << "F_bar_square: " << F_bar_square << endl;
+	float F_square_bar = sum_square/pow(n,2);
+	cout << "F_square_bar: " << F_square_bar << endl;
+	float del_F_square = F_square_bar - F_bar_square;
+	cout << "del_F_square: " << del_F_square << endl;
+	float uncertainty = sqrt(del_F_square)/sum;
+	cout << "uncertainty: " << uncertainty << endl;
+
+	//return (upper_limit-lower_limit)*sum/n;
+	return {((2.99-lower_limit)*sum/n + (upper_limit-3.01)*sum1/n), hist->GetRMS(), uncertainty};
+}
+
+//double weighted_monteCarlo_integration(int n, float lower_limit, float upper_limit, float mean_g, float sigma_g){
+tuple<float, float, float> weighted_monteCarlo_integration(int n, float lower_limit, float upper_limit, float mean_g, float sigma_g){
+	TRandom random;
+	//Initial seed is NOT RANDOM, so results will be the same
+	//Setting seed to 0 will give us a new random seed
+	random.SetSeed(0);
+	double sum = 0.0; double sumleft = 0.0; double sumright = 0.0;
+	double sum_square = 0.0; double sum_squareleft = 0.0; double sum_squareright = 0.0;
+	TH1F *hist = new TH1F("hist", "hist", n, 0, n);
+	TH1F *hist1 = new TH1F("hist", "hist", n, 0, n);
+	TH1F *hist2 = new TH1F("hist", "hist", n, 0, n);
+
+	for (int i=0; i<n; i++){
 		double gaus_dist = random.Gaus(mean_g, sigma_g);
 		//cout << "gaus dist " << gaus_dist << endl;
 		hist->Fill(gaus_dist);
@@ -67,21 +110,20 @@ tuple<float, float, float> weighted_monteCarlo_integration(int n, float lower_li
 		sum_square += pow(sum, 2);
 	}
 	float F_bar_square = pow(sum/n, 2);
-	float F_square_bar = sum_square/n;
+	float F_square_bar = sum_square/pow(n,2);
 	float del_F_square = F_square_bar - F_bar_square;
 	float uncertainty = sqrt(del_F_square)/sum;
 
 	//return (upper_limit-lower_limit)*sum/n;
 	//return {(upper_limit-lower_limit)*sum/n, hist->GetRMS(), hist->GetStdDev()};
-	return {(upper_limit-lower_limit)*sum/n, hist->GetRMS(), uncertainty};
+	return {(3.01-2.99)*sum/n, hist->GetRMS(), uncertainty};
 }
 
 
 void weighted_MC()
 {
-	float lower_limit=0.0; float upper_limit=4; //1 or 4 or M_PI/2
+	float lower_limit=0; float upper_limit=4; //1 or 4 or M_PI/2
 	int arr_iteration[] = {5, 10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000};
-	int bin_size = 10;
 
 
 	//calculating the analytical integral first using root's integral function TF1::Integral() and corresponding error from TF1::IntegralError
@@ -90,6 +132,7 @@ void weighted_MC()
 	std::cout << "integral: " << integral_analytical_value << std::endl;
 
 	FILE *t = fopen("eq4_weighted.csv", "w");
+	fprintf(t, "analytical integral value: %f\n", integral_analytical_value);
 	fprintf(t, "iteration, MC, MC_weighted\n");
 
 	//Create a canvas to draw the histogram
@@ -112,18 +155,18 @@ void weighted_MC()
 
 		float delta_xi = (upper_limit - lower_limit)/arr_iteration[iter];
 
-		integration_mc = monteCarlo_integration(arr_iteration[iter], lower_limit, upper_limit);
-		//integration_mc_w = weighted_monteCarlo_integration(arr_iteration[iter], lower_limit, upper_limit, 3, 1); 
-		auto [mc_w_integral, rms, uncertainty] = weighted_monteCarlo_integration(arr_iteration[iter], lower_limit, upper_limit, 3, 1);
+		auto [mc_integral, rms, uncertainty] = monteCarlo_integration(arr_iteration[iter], lower_limit, upper_limit);
+		auto [mc_integral_leftright, rms_rl, uncertainty_rl] = monteCarlo_integration_leftright(arr_iteration[iter], lower_limit, upper_limit);
+		auto [mc_w_integral, rms_w, uncertainty_w] = weighted_monteCarlo_integration(arr_iteration[iter], lower_limit, upper_limit, 3, 1);
 
-		cout << "integration (mc, mc_w): " << integration_mc << ", " << mc_w_integral << endl;
-		fprintf(t, "%i, %f, %f, %f\n", arr_iteration[iter], integral_analytical_value, integration_mc, mc_w_integral);
+		cout << "integration (mc, mc_w): " << mc_integral << ", " << mc_integral_leftright+mc_w_integral << endl;
+		fprintf(t, "%i & %f & %f\n", arr_iteration[iter], mc_integral, mc_integral_leftright+mc_w_integral);
 
 		g0->SetPoint(iter, arr_iteration[iter], integral_analytical_value);
-		g3->SetPoint(iter, arr_iteration[iter], integration_mc);
-		g4->SetPoint(iter, arr_iteration[iter], mc_w_integral);//integration_mc_w);
-		g5->SetPoint(iter, arr_iteration[iter], rms);
-		g6->SetPoint(iter, arr_iteration[iter], uncertainty);
+		g3->SetPoint(iter, arr_iteration[iter], mc_integral);
+		g4->SetPoint(iter, arr_iteration[iter], mc_integral_leftright+mc_w_integral);//integration_mc_w);
+		g5->SetPoint(iter, arr_iteration[iter], rms_w);
+		g6->SetPoint(iter, arr_iteration[iter], uncertainty_w);
 
 
 	}
@@ -140,7 +183,7 @@ void weighted_MC()
 	mg->GetXaxis()->SetTitleOffset(1);
 	mg->GetXaxis()->SetNoExponent();
 	mg->GetXaxis()->SetLimits(5, 100000);
-	c1->SetLogx();
+	//c1->SetLogx();
 	mg->Draw("ALP");
 
 	c1->BuildLegend(0.2, 0.7, 0.7, 0.9, "I=<f(x)>_{(0:4)}", "");
@@ -155,7 +198,7 @@ void weighted_MC()
     g5->GetXaxis()->SetTitleOffset(1);
     g5->GetXaxis()->SetNoExponent();
     g5->GetXaxis()->SetLimits(5, 100000);
-    c2->SetLogx();
+    //c2->SetLogx();
     g5->Draw("ALP");
 
     c2->BuildLegend(0.2, 0.7, 0.7, 0.9, "I_{RMS}=<f(x)>_{(0:4)}", "");
@@ -169,7 +212,7 @@ void weighted_MC()
     g6->GetXaxis()->SetTitleOffset(1);
     g6->GetXaxis()->SetNoExponent();
     g6->GetXaxis()->SetLimits(5, 100000);
-    c3->SetLogx();
+    //c3->SetLogx();
     g6->Draw("ALP");
 
     c3->BuildLegend(0.2, 0.7, 0.7, 0.9, "I_{uncertainty}=<f(x)>_{(0:4)}", "");
