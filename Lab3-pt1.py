@@ -129,7 +129,7 @@ canvas2.SetBottomMargin( B/H )
 canvas2.SetTickx(0)
 canvas2.SetTicky(0)
 canvas2.SetGrid()
-canvas2.SetLogz()
+#canvas2.SetLogz()
 #canvas2.SetLogy()
 
 ln_mle_hist = ROOT.TH2F("ln_mle_hist", "ln_mle_hist", 1000, 0.01, 100, 500, 0.01, 50) 
@@ -175,8 +175,8 @@ for b in np.arange(0.01, 100, 0.1):
 		ln_mle_list.append(ln_mle_sum)
 
 
-#ln_mle_xAxis.SetRangeUser(8, 20)
-#ln_mle_yAxis.SetRangeUser(0.01, 20)
+ln_mle_xAxis.SetRangeUser(51, 60)
+ln_mle_yAxis.SetRangeUser(11, 23)
 ln_mle_hist.SetMarkerSize(0)
 ln_mle_hist.DrawCopy("colz")
 
@@ -189,9 +189,9 @@ min_ln_mle = min(ln_mle_list)
 min_b = b_list[ln_mle_list.index(min_ln_mle)]
 min_s = s_list[ln_mle_list.index(min_ln_mle)]
 
-line1 = ROOT.TLine(min_b, 0.01, min_b, 50)
+line1 = ROOT.TLine(min_b, 11, min_b, 23)#(min_b, 0.01, min_b, 50)
 line1.SetLineColor(ROOT.kYellow)
-line2 = ROOT.TLine(0.01, min_s, 100, min_s)
+line2 = ROOT.TLine(51, min_s, 60, min_s)#(0.01, min_s, 100, min_s)
 line2.SetLineColor(ROOT.kYellow)
 line1.Draw()
 line2.Draw()
@@ -214,7 +214,7 @@ latex.DrawLatex(0+4.0*canvas.GetLeftMargin(), 1-canvas.GetTopMargin()+0.5*canvas
 	"f(m) = B exp(-#alpha m) + S exp(#frac{-(m-m_{0})^{2}}{2 #sigma^{2}})")
 
 
-canvas2.SaveAs("plots/part1/part1_2D_mle.png")
+canvas2.SaveAs("plots/part1/part1_2D_mle_zoomedin.png")
 
 
 #'''
@@ -227,32 +227,43 @@ min_ln_mle_list_left_1sigma = []
 min_ln_mle_list_right_1sigma = []
 min_ln_mle_list_left_2sigma = []
 min_ln_mle_list_right_2sigma = []
+index_list_1sigma = []
+index_list_2sigma = []
+
 for idx, k in enumerate(ln_mle_list):
 	if (k-min_ln_mle) < 2.01:
 		if idx < ln_mle_list.index(min_ln_mle):
-			if (min_ln_mle+0.5)-k < 0.001:
+			if (min_ln_mle+0.5)-k< 0.01 and k-(min_ln_mle+0.5)< 0.01:
 				min_ln_mle_list_left_1sigma.append(k)
-			if (min_ln_mle+2)-k < 0.001:
+				index_list_1sigma.append(idx)
+			if (min_ln_mle+2)-k < 0.01:
 				min_ln_mle_list_left_2sigma.append(k)
+				index_list_2sigma.append(idx)
 		if idx > ln_mle_list.index(min_ln_mle):
-			if (min_ln_mle+0.5)-k < 0.001:
+			if (min_ln_mle+0.5)-k < 0.01 and k-(min_ln_mle+0.5)< 0.01:
 				min_ln_mle_list_right_1sigma.append(k)
-			if (min_ln_mle+2)-k < 0.001:
+				index_list_1sigma.append(idx)
+			if (min_ln_mle+2)-k < 0.01:
 				min_ln_mle_list_right_2sigma.append(k)
+				index_list_2sigma.append(idx)
 	else:
 		continue
 
 uncertainty_ln_mle_left_1sigma = min(min_ln_mle_list_left_1sigma)
 uncertainty_ln_mle_right_1sigma = min(min_ln_mle_list_right_1sigma)
-uncertainty_b_left_1sigma = b_list[ln_mle_list.index(uncertainty_ln_mle_left_1sigma)]
-uncertainty_b_right_1sigma = b_list[ln_mle_list.index(uncertainty_ln_mle_right_1sigma)]
+#print("1sig ln mle:", min_ln_mle_list_left_1sigma, min_ln_mle_list_right_1sigma)
+#print("2sig ln mle:", min_ln_mle_list_left_2sigma, min_ln_mle_list_right_2sigma)
+
+uncertainty_b_left_1sigma = b_list[min(index_list_1sigma)]
+uncertainty_b_right_1sigma = b_list[max(index_list_1sigma)]
 uncertainty_s_left_1sigma = s_list[ln_mle_list.index(uncertainty_ln_mle_left_1sigma)]
 uncertainty_s_right_1sigma = s_list[ln_mle_list.index(uncertainty_ln_mle_right_1sigma)]
 
 uncertainty_ln_mle_left_2sigma = min(min_ln_mle_list_left_2sigma)
 uncertainty_ln_mle_right_2sigma = min(min_ln_mle_list_right_2sigma)
-uncertainty_b_left_2sigma = b_list[ln_mle_list.index(uncertainty_ln_mle_left_2sigma)]
-uncertainty_b_right_2sigma = b_list[ln_mle_list.index(uncertainty_ln_mle_right_2sigma)]
+
+uncertainty_b_left_2sigma = b_list[min(index_list_2sigma)]
+uncertainty_b_right_2sigma = b_list[max(index_list_2sigma)]
 uncertainty_s_left_2sigma = s_list[ln_mle_list.index(uncertainty_ln_mle_left_2sigma)]
 uncertainty_s_right_2sigma = s_list[ln_mle_list.index(uncertainty_ln_mle_right_2sigma)]
 
